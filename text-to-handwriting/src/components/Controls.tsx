@@ -1,6 +1,6 @@
 import React from 'react';
 import { type Settings } from '../types';
-import { Download, Type, Move, FileText } from 'lucide-react';
+import { Download, Type, Move, FileText, Image as ImageIcon, X } from 'lucide-react';
 
 interface ControlsProps {
   settings: Settings;
@@ -15,7 +15,28 @@ const Controls: React.FC<ControlsProps> = ({ settings, setSettings, onDownload }
     
     setSettings(prev => ({
       ...prev,
-      [name]: type === 'number' ? parseFloat(value) : val
+      [name]: type === 'number' || name === 'wordSpacing' || name === 'lineHeight' ? parseFloat(value) : val
+    }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setSettings(prev => ({
+          ...prev,
+          backgroundImage: event.target?.result as string
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearBackground = () => {
+    setSettings(prev => ({
+      ...prev,
+      backgroundImage: null
     }));
   };
 
@@ -79,18 +100,33 @@ const Controls: React.FC<ControlsProps> = ({ settings, setSettings, onDownload }
         </div>
       </div>
 
-      <div className="control-group">
-        <label className="control-label"><Move size={14} style={{marginRight: '4px'}}/> Line Height ({settings.lineHeight})</label>
-        <input
-          type="range"
-          name="lineHeight"
-          className="range-input"
-          min="1"
-          max="3"
-          step="0.1"
-          value={settings.lineHeight}
-          onChange={handleChange}
-        />
+      <div className="settings-row">
+        <div className="control-group">
+          <label className="control-label"><Move size={14} style={{marginRight: '4px'}}/> Line Height ({settings.lineHeight})</label>
+          <input
+            type="range"
+            name="lineHeight"
+            className="range-input"
+            min="1"
+            max="3"
+            step="0.1"
+            value={settings.lineHeight}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="control-group">
+          <label className="control-label">Word Spacing ({settings.wordSpacing})</label>
+          <input
+            type="range"
+            name="wordSpacing"
+            className="range-input"
+            min="0"
+            max="50"
+            step="1"
+            value={settings.wordSpacing}
+            onChange={handleChange}
+          />
+        </div>
       </div>
 
       <div className="control-group">
@@ -111,6 +147,40 @@ const Controls: React.FC<ControlsProps> = ({ settings, setSettings, onDownload }
             Blank
           </button>
         </div>
+      </div>
+
+      <div className="control-group">
+        <label className="control-label"><ImageIcon size={14} style={{marginRight: '4px'}}/> Custom Background</label>
+        {settings.backgroundImage ? (
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+            <div 
+              style={{
+                width: '40px', 
+                height: '40px', 
+                borderRadius: '4px', 
+                backgroundImage: `url(${settings.backgroundImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                border: '1px solid var(--border-color)'
+              }}
+            />
+            <button 
+              className="button button-secondary" 
+              onClick={clearBackground}
+              style={{padding: '4px 8px', fontSize: '12px', flex: 'none'}}
+            >
+              <X size={12} /> Clear
+            </button>
+          </div>
+        ) : (
+          <input
+            type="file"
+            accept="image/*"
+            className="input-field"
+            onChange={handleFileChange}
+            style={{fontSize: '12px'}}
+          />
+        )}
       </div>
 
       <div className="control-group" style={{display: 'flex', gap: '1rem', alignItems: 'center'}}>

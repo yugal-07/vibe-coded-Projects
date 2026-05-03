@@ -11,7 +11,7 @@ const Page: React.FC<PageProps> = ({ text, settings, pageNumber }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const draw = () => {
+    const draw = async () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
 
@@ -25,11 +25,21 @@ const Page: React.FC<PageProps> = ({ text, settings, pageNumber }) => {
       canvas.height = height;
 
       // Background
-      ctx.fillStyle = settings.paperColor;
-      ctx.fillRect(0, 0, width, height);
+      if (settings.backgroundImage) {
+        const img = new Image();
+        img.src = settings.backgroundImage;
+        await new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve; // Continue anyway if it fails
+        });
+        ctx.drawImage(img, 0, 0, width, height);
+      } else {
+        ctx.fillStyle = settings.paperColor;
+        ctx.fillRect(0, 0, width, height);
+      }
 
       // Drawing Lines
-      if (settings.paperType === 'lined') {
+      if (settings.paperType === 'lined' && !settings.backgroundImage) {
         ctx.strokeStyle = '#cbd5e1';
         ctx.lineWidth = 1;
         const startY = settings.margin * 2;
@@ -61,7 +71,18 @@ const Page: React.FC<PageProps> = ({ text, settings, pageNumber }) => {
       const lineSpacing = settings.fontSize * settings.lineHeight;
 
       lines.forEach((line) => {
-        ctx.fillText(line, startX, y);
+        const words = line.split(' ');
+        let currentX = startX;
+        
+        words.forEach((word) => {
+          ctx.fillText(word, currentX, y);
+          const wordWidth = ctx.measureText(word).width;
+          const spaceWidth = ctx.measureText(' ').width;
+          
+          // Use standard space width + custom word spacing
+          currentX += wordWidth + spaceWidth + (settings.wordSpacing || 0);
+        });
+        
         y += lineSpacing;
       });
 

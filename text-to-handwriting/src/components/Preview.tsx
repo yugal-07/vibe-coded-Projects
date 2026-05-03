@@ -38,9 +38,13 @@ const Preview: React.FC<PreviewProps> = ({ settings }) => {
       let currentX = 0;
 
       words.forEach((word) => {
-        const wordWidth = ctx.measureText(word + ' ').width;
+        const wordWidth = ctx.measureText(word).width;
+        const spaceWidth = ctx.measureText(' ').width + (settings.wordSpacing || 0);
         
-        if (currentX + wordWidth > maxWidth && currentLineWords.length > 0) {
+        // Potential width if we add this word (without a trailing space if it's the first word)
+        const wordTotalWidth = currentLineWords.length === 0 ? wordWidth : wordWidth + spaceWidth;
+
+        if (currentX + wordTotalWidth > maxWidth && currentLineWords.length > 0) {
           // Push current line to the current page
           pagesList[pagesList.length - 1].push(currentLineWords.join(' '));
           currentLineWords = [word];
@@ -54,7 +58,7 @@ const Preview: React.FC<PreviewProps> = ({ settings }) => {
           }
         } else {
           currentLineWords.push(word);
-          currentX += wordWidth;
+          currentX += (currentLineWords.length === 1 ? wordWidth : wordWidth + spaceWidth);
         }
       });
 
