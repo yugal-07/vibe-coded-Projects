@@ -1,7 +1,7 @@
 # steps to start
 ```bash
 git clone https://github.com/yugal-07/vibe-coded-Projects/
-cd vibe-coded-projects/text-to-handwriting
+cd vibe-coded-Projects/text-to-handwriting
 npm run dev
 ```
 
