@@ -1,8 +1,12 @@
 # steps to start
-1. git clone https://github.com/yugal-07/vibe-coded-Projects/tree/main/text-to-handwriting
-2. cd vibe-coded-projects/text-to-handwriting
-3. npm run dev
-4. open on web browser using local host link
+```bash
+git clone https://github.com/yugal-07/vibe-coded-Projects/tree/main/text-to-handwriting
+cd vibe-coded-projects/text-to-handwriting
+npm run dev
+```
+
+
+then, open on web browser using local host link
 
 # React + TypeScript + Vite
 
