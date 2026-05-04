@@ -76,14 +76,10 @@ function App() {
   };
 
   const getHeatmapColor = (percentage: number) => {
-    // 0% (Human) = Greenish, 100% (AI) = Reddish
-    const hue = 120 - (percentage * 1.2); 
-    return `hsla(${hue}, 80%, 50%, 0.25)`;
-  };
-
-  const getHeatmapBorder = (percentage: number) => {
-    const hue = 120 - (percentage * 1.2);
-    return `1px solid hsla(${hue}, 80%, 40%, 0.4)`;
+    if (percentage > 80) return '#ff4d4d'; // Red
+    if (percentage > 50) return '#ff944d'; // Orange
+    if (percentage > 20) return '#ffff4d'; // Yellow
+    return '#4dff4d'; // Green
   };
 
   const handleHumanize = async () => {
@@ -117,147 +113,187 @@ function App() {
 
   return (
     <div className="app-container">
-      <div className="content-card">
-        <header>
-          <h1>Humanizer</h1>
-          <p>Detect and refine AI-generated content with precision.</p>
-          
-          <div className="mode-toggle">
-            <button 
-              className={mode === 'text' ? 'active' : ''} 
-              onClick={() => { setMode('text'); setError(null); }}
-            >
-              Text Mode
-            </button>
-            <button 
-              className={mode === 'code' ? 'active' : ''} 
-              onClick={() => { setMode('code'); setError(null); }}
-            >
-              Code Mode
-            </button>
-          </div>
-        </header>
+      <div className="console-frame">
+        <div className="content-card">
+          <header>
+            <h1>Humanizer</h1>
+            <p>Detect and refine AI-generated content with precision.</p>
+            
+            <div className="mode-toggle">
+              <button 
+                className={mode === 'text' ? 'active' : ''} 
+                onClick={() => { setMode('text'); setError(null); }}
+              >
+                Text
+              </button>
+              <button 
+                className={mode === 'code' ? 'active' : ''} 
+                onClick={() => { setMode('code'); setError(null); }}
+              >
+                Code
+              </button>
+            </div>
+          </header>
 
-        <main>
-          <div className="input-group">
-            {mode === 'text' ? (
-              <textarea
-                placeholder="Paste your text here..."
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                rows={8}
-              />
-            ) : (
-              <textarea
-                className="code-input"
-                placeholder="Paste your code here..."
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                rows={12}
-              />
-            )}
-            <div className="actions">
-              <button 
-                className="btn-primary" 
-                onClick={handleDetect} 
-                disabled={loading || humanizing}
-              >
-                {loading ? 'Analyzing...' : `Detect AI ${mode === 'code' ? 'Code' : ''}`}
-              </button>
-              <button 
-                className="btn-secondary" 
-                onClick={handleHumanize} 
-                disabled={loading || humanizing}
-              >
-                {humanizing ? 'Refining...' : `Humanize ${mode === 'code' ? 'Code' : ''}`}
-              </button>
+          <main>
+            <div className="input-group">
+              {mode === 'text' ? (
+                <textarea
+                  placeholder="Paste your text here..."
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  rows={8}
+                />
+              ) : (
+                <textarea
+                  className="code-input"
+                  placeholder="Paste your code here..."
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  rows={12}
+                />
+              )}
+              <div className="actions">
+                <button 
+                  className="btn-primary" 
+                  onClick={handleDetect} 
+                  disabled={loading || humanizing}
+                >
+                  {loading ? '...' : 'DETECT'}
+                </button>
+                <button 
+                  className="btn-secondary" 
+                  onClick={handleHumanize} 
+                  disabled={loading || humanizing}
+                >
+                  {humanizing ? '...' : 'REFINE'}
+                </button>
+              </div>
+            </div>
+
+            {error && <div className="error-alert">{error}</div>}
+
+            <div className="results-grid">
+              {result && (
+                <div className="result-card fade-in">
+                  <div className="score-header">
+                    <span className="score-label">{mode === 'code' ? 'CODE AI SCORE' : 'OVERALL AI %'}</span>
+                    <span className="score-value">{result.percentage}%</span>
+                  </div>
+                  
+                  {detailedResult && mode === 'text' ? (
+                    <div className="heatmap-container">
+                      {detailedResult.sentences.map((s, i) => (
+                        <span
+                          key={i}
+                          className="heatmap-sentence"
+                          style={{
+                            backgroundColor: getHeatmapColor(s.percentage),
+                            color: '#000',
+                            padding: '0 4px',
+                          }}
+                          onMouseEnter={() => setHoveredSentence(s)}
+                          onMouseLeave={() => setHoveredSentence(null)}
+                        >
+                          {s.text}{' '}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="result-text">{result.reasoning}</p>
+                  )}
+
+                  {hoveredSentence && mode === 'text' && (
+                    <div className="sentence-tooltip fade-in">
+                      <div className="tooltip-header">
+                        <span className="tooltip-score">{hoveredSentence.percentage}%</span>
+                        <span className="tooltip-label">AI PROBABILITY</span>
+                      </div>
+                      <p className="tooltip-reasoning">{hoveredSentence.reasoning}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {humanizeResult && mode === 'text' && (
+                <div className="result-card fade-in">
+                  <div className="score-header">
+                    <span className="score-label">HUMANIZED TEXT</span>
+                    <button 
+                      className="btn-text" 
+                      onClick={() => navigator.clipboard.writeText(humanizeResult.humanizedText)}
+                    >
+                      COPY
+                    </button>
+                  </div>
+                  <div className="humanized-box">
+                    {humanizeResult.humanizedText}
+                  </div>
+                  <p className="explanation-text">{humanizeResult.explanation}</p>
+                </div>
+              )}
+
+              {codeResult && mode === 'code' && (
+                <div className="result-card fade-in">
+                  <div className="score-header">
+                    <span className="score-label">HUMANIZED CODE</span>
+                    <button 
+                      className="btn-text" 
+                      onClick={() => navigator.clipboard.writeText(codeResult.humanizedCode)}
+                    >
+                      COPY
+                    </button>
+                  </div>
+                  <pre className="code-box">
+                    <code>{codeResult.humanizedCode}</code>
+                  </pre>
+                  <p className="explanation-text">{codeResult.explanation}</p>
+                </div>
+              )}
+            </div>
+          </main>
+        </div>
+        
+        <div className="console-controls">
+          <div className="d-pad">
+            <div className="d-pad-up"></div>
+            <div className="d-pad-down"></div>
+            <div className="d-pad-left"></div>
+            <div className="d-pad-right"></div>
+            <div className="d-pad-center"></div>
+          </div>
+          
+          <div className="center-controls">
+            <div className="console-brand">PIXEL-CORE 3000</div>
+            <div className="start-select">
+              <div className="select-btn"><span>SELECT</span></div>
+              <div className="start-btn"><span>START</span></div>
             </div>
           </div>
 
-          {error && <div className="error-alert">{error}</div>}
-
-          <div className="results-grid">
-            {result && (
-              <div className="result-card fade-in">
-                <div className="score-header">
-                  <span className="score-label">{mode === 'code' ? 'Code AI Score' : 'Overall AI Probability'}</span>
-                  <span className="score-value">{result.percentage}%</span>
-                </div>
-                
-                {detailedResult && mode === 'text' ? (
-                  <div className="heatmap-container">
-                    {detailedResult.sentences.map((s, i) => (
-                      <span
-                        key={i}
-                        className="heatmap-sentence"
-                        style={{
-                          backgroundColor: getHeatmapColor(s.percentage),
-                          borderBottom: getHeatmapBorder(s.percentage)
-                        }}
-                        onMouseEnter={() => setHoveredSentence(s)}
-                        onMouseLeave={() => setHoveredSentence(null)}
-                      >
-                        {s.text}{' '}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="result-text">{result.reasoning}</p>
-                )}
-
-                {hoveredSentence && mode === 'text' && (
-                  <div className="sentence-tooltip fade-in">
-                    <div className="tooltip-header">
-                      <span className="tooltip-score">{hoveredSentence.percentage}%</span>
-                      <span className="tooltip-label">AI probability</span>
-                    </div>
-                    <p className="tooltip-reasoning">{hoveredSentence.reasoning}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {humanizeResult && mode === 'text' && (
-              <div className="result-card fade-in">
-                <div className="score-header">
-                  <span className="score-label">Humanized Text</span>
-                  <button 
-                    className="btn-text" 
-                    onClick={() => navigator.clipboard.writeText(humanizeResult.humanizedText)}
-                  >
-                    Copy
-                  </button>
-                </div>
-                <div className="humanized-box">
-                  {humanizeResult.humanizedText}
-                </div>
-                <p className="explanation-text">{humanizeResult.explanation}</p>
-              </div>
-            )}
-
-            {codeResult && mode === 'code' && (
-              <div className="result-card fade-in">
-                <div className="score-header">
-                  <span className="score-label">Humanized Code</span>
-                  <button 
-                    className="btn-text" 
-                    onClick={() => navigator.clipboard.writeText(codeResult.humanizedCode)}
-                  >
-                    Copy
-                  </button>
-                </div>
-                <pre className="code-box">
-                  <code>{codeResult.humanizedCode}</code>
-                </pre>
-                <p className="explanation-text">{codeResult.explanation}</p>
-              </div>
-            )}
+          <div className="action-buttons">
+            <div 
+              className={`button-b ${humanizing ? 'pressed' : ''}`} 
+              onClick={handleHumanize}
+              title="Humanize"
+            >
+              B
+            </div>
+            <div 
+              className={`button-a ${loading ? 'pressed' : ''}`} 
+              onClick={handleDetect}
+              title="Detect"
+            >
+              A
+            </div>
           </div>
-        </main>
+        </div>
+        <div className="console-footer-details">
+          <div className="speaker-grill"></div>
+          <div className="speaker-grill"></div>
+          <div className="speaker-grill"></div>
+        </div>
       </div>
-      <footer>
-        <p>&copy; 2026 Humanizer • Powered by Groq</p>
-      </footer>
     </div>
   );
 }
